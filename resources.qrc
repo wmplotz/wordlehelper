@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>5-letterwords.txt</file>
+    </qresource>
+</RCC>
