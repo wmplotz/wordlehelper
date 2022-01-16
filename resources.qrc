@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>5-letterwords.txt</file>
+        <file>bigrams.txt</file>
+        <file>all_words.txt</file>
     </qresource>
 </RCC>

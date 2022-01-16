@@ -12,7 +12,9 @@ class WordlLogic : public QObject
 
     const QStringList m_AllWords;
     const QHash<char, int> m_Frequencies;
+    const QHash<QString, int> m_Bigrams;
 
+    QHash<QString, int> get_bigrams();
     QStringList get_word_list_from_resource();
     QHash<char, int> get_f_letter();
 

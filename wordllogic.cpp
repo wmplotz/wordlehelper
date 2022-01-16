@@ -42,7 +42,8 @@ QHash<char, int> WordlLogic::get_f_letter() {
 WordlLogic::WordlLogic(QObject* parent)
     : QObject(parent),
       m_AllWords(get_word_list_from_resource()),
-      m_Frequencies(get_f_letter())
+      m_Frequencies(get_f_letter()),
+      m_Bigrams(get_bigrams())
 {
 
 }
@@ -64,14 +65,21 @@ float WordlLogic::word_relevance(QString word) {
         letters.append(word.at(pos));
     }
 
-    return letters.length()*10000 + count;
+    int bigrams=0;
+    bigrams += m_Bigrams[word.mid(0,2)];
+    bigrams += m_Bigrams[word.mid(1,2)];
+    bigrams += m_Bigrams[word.mid(2,2)];
+    bigrams += m_Bigrams[word.mid(3,2)];
+
+    return letters.length()*1000000 + bigrams;
 }
 
 
-QStringList WordlLogic::get_word_list_from_resource()
+
+QHash<QString, int> WordlLogic::get_bigrams()
 {
-    QStringList result;
-    QString fileName(":/5-letterwords.txt");
+    QHash<QString, int> result;
+    QString fileName(":/bigrams.txt");
     QFile file(fileName);
 
     if (!file.open(QIODevice::ReadOnly)) {
@@ -81,7 +89,37 @@ QStringList WordlLogic::get_word_list_from_resource()
         while (!in.atEnd())
         {
            QString word = in.readLine().trimmed();
-           result.append(word);
+           QStringList items = word.split("\t");
+           result[items[0]] = items[1].toInt();
+        }
+        file.close();
+    }
+
+    file.close();
+    return result;
+}
+
+#define FILENAME_1 ":/bigrams.txt"
+#define FILENAME_2 ":/all_words.txt"
+
+
+
+QStringList WordlLogic::get_word_list_from_resource()
+{
+    QStringList result;
+    QString fileName(FILENAME_2);
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        exit(1);
+    } else {
+        QTextStream in(&file);
+        while (!in.atEnd())
+        {
+           QString word = in.readLine().trimmed();
+           if (word.length()==5) {
+               result.append(word);
+           }
         }
         file.close();
     }
