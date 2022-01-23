@@ -4,6 +4,7 @@
 #include "ui_wordlehelpermainwindow.h"
 #include "wordllogic.h"
 
+
 WordleHelperMainWindow::WordleHelperMainWindow(QWidget *parent)
     : QMainWindow(parent),
       m_Logic(new WordlLogic(this)),
@@ -12,6 +13,7 @@ WordleHelperMainWindow::WordleHelperMainWindow(QWidget *parent)
     ui->setupUi(this);
     connect(m_Logic, &WordlLogic::show_wordlist, this, &WordleHelperMainWindow::set_wordlist);
     m_Logic->reset();
+
 }
 
 WordleHelperMainWindow::~WordleHelperMainWindow()

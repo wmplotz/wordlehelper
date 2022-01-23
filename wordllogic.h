@@ -6,24 +6,26 @@
 #include <QStringList>
 #include <QHash>
 
+#include "ngramlist.h"
+
 class WordlLogic : public QObject
 {
     Q_OBJECT
 
-    const QStringList m_AllWords;
-    const QHash<char, int> m_Frequencies;
-    const QHash<QString, int> m_Bigrams;
 
-    QHash<QString, int> get_bigrams();
-    QStringList get_word_list_from_resource();
-    QHash<char, int> get_f_letter();
+    const NGramList m_LetterStatisitc;
+    const NGramList m_2GramStatisitc;
+    const NGramList m_3GramStatisitc;
 
-    float word_relevance(QString word);
+    double word_relevance(QString word);
 
     QList<QChar> m_validLetters[5];
     QList<QChar> m_requiredLetters;
     bool accept_word(QString word);
 
+    int m_ApplyCount;
+    const QStringList m_AllWords;
+    QStringList get_word_list_from_resource(QString file_name);
 
 public:
     WordlLogic(QObject* parent);

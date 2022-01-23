@@ -5,110 +5,44 @@
 #include <QTextStream>
 #include <qdebug.h>
 
+#include <math.h>
 
 
-QHash<char, int> WordlLogic::get_f_letter() {
-    QHash<char, int> result;
-    result['A'] = 1000*8.34;
-    result['B'] = 1000*1.54;
-    result['C'] = 1000*2.73;
-    result['D'] = 1000*4.14;
-    result['E'] = 1000*12.60;
-    result['F'] = 1000*2.03;
-    result['G'] = 1000*1.92;
-    result['H'] = 1000*6.11;
-    result['I'] = 1000*6.71;
-    result['J'] = 1000*0.23;
-    result['K'] = 1000*0.87;
-    result['L'] = 1000*4.24;
-    result['M'] = 1000*2.53;
-    result['N'] = 1000*6.80;
-    result['O'] = 1000*7.70;
-    result['P'] = 1000*1.66;
-    result['Q'] = 1000*0.09;
-    result['R'] = 1000*5.68;
-    result['S'] = 1000*6.11;
-    result['T'] = 1000*9.37;
-    result['U'] = 1000*2.85;
-    result['V'] = 1000*1.06;
-    result['W'] = 1000*2.34;
-    result['X'] = 1000*0.20;
-    result['Y'] = 1000*2.04;
-    result['Z'] = 1000*0.06;
-    return result;
-}
-
+#define FILENAME_1 ":/bigrams.txt"
+//#define FILENAME_2 ":/all_words.txt"
+#define FILENAME_2 ":/5-letterwords.txt"
 
 WordlLogic::WordlLogic(QObject* parent)
     : QObject(parent),
-      m_AllWords(get_word_list_from_resource()),
-      m_Frequencies(get_f_letter()),
-      m_Bigrams(get_bigrams())
+      m_LetterStatisitc(1, ":/english_monograms.txt"),
+      m_2GramStatisitc(2, ":/english_bigrams.txt"),
+      m_3GramStatisitc(3, ":/english_trigrams.txt"),
+      m_ApplyCount(0),
+      m_AllWords(get_word_list_from_resource(":/wordle_list.txt"))
 {
-
+    //qDebug() << m_LetterStatisitc.min_relevance();
+    //qDebug() << m_2GramStatisitc.min_relevance();
+    //qDebug() << m_3GramStatisitc.min_relevance();
 }
 
-float WordlLogic::word_relevance(QString word) {
-    const char* chars = word.toStdString().c_str();
-    float count=0;
-    for(int index=0; index ^5; index++) {
-        if (m_Frequencies.contains(chars[index])) {
-            count += m_Frequencies[chars[index]];
-        } else {
-            qDebug() << "Bad Word in wordlist: " << word;
-        }
-    }
+double WordlLogic::word_relevance(QString word) {
 
-    QList<QChar> letters;
-    for(int pos=0; pos ^word.length(); pos++) {
-        letters.removeAll(word.at(pos));
-        letters.append(word.at(pos));
-    }
+    const NGramList& ngrams(m_ApplyCount > 3 ? m_2GramStatisitc : m_3GramStatisitc);
 
-    int bigrams=0;
-    bigrams += m_Bigrams[word.mid(0,2)];
-    bigrams += m_Bigrams[word.mid(1,2)];
-    bigrams += m_Bigrams[word.mid(2,2)];
-    bigrams += m_Bigrams[word.mid(3,2)];
+    QStringList used_letters;
+    double letter_value = m_LetterStatisitc.word_relevance(word, &used_letters);
 
-    return letters.length()*1000000 + bigrams;
-}
+    double result = m_ApplyCount < 3 ? used_letters.length() : 1.0;
 
-
-
-QHash<QString, int> WordlLogic::get_bigrams()
-{
-    QHash<QString, int> result;
-    QString fileName(":/bigrams.txt");
-    QFile file(fileName);
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        exit(1);
-    } else {
-        QTextStream in(&file);
-        while (!in.atEnd())
-        {
-           QString word = in.readLine().trimmed();
-           QStringList items = word.split("\t");
-           result[items[0]] = items[1].toInt();
-        }
-        file.close();
-    }
-
-    file.close();
+    // result = result * 1000 + letter_value;
+    result = (result*fabs(ngrams.min_relevance())*1000) + ngrams.word_relevance(word) * 1000;
     return result;
 }
 
-#define FILENAME_1 ":/bigrams.txt"
-#define FILENAME_2 ":/all_words.txt"
-
-
-
-QStringList WordlLogic::get_word_list_from_resource()
+QStringList WordlLogic::get_word_list_from_resource(QString file_name)
 {
     QStringList result;
-    QString fileName(FILENAME_2);
-    QFile file(fileName);
+    QFile file(file_name);
 
     if (!file.open(QIODevice::ReadOnly)) {
         exit(1);
@@ -116,7 +50,7 @@ QStringList WordlLogic::get_word_list_from_resource()
         QTextStream in(&file);
         while (!in.atEnd())
         {
-           QString word = in.readLine().trimmed();
+           QString word = in.readLine().trimmed().toUpper();
            if (word.length()==5) {
                result.append(word);
            }
@@ -125,6 +59,13 @@ QStringList WordlLogic::get_word_list_from_resource()
     }
 
     file.close();
+
+    qSort(result.begin(), result.end(),
+        [this](const QString & a, const QString & b) -> bool
+    {
+        return word_relevance(a) > word_relevance(b);
+    });
+
     return result;
 }
 
@@ -137,13 +78,8 @@ static void setAlphabert(QList<QChar>& data) {
 }
 
 void WordlLogic::reset() {
+    m_ApplyCount = 0;
     QStringList result(m_AllWords);
-
-    qSort(result.begin(), result.end(),
-        [this](const QString & a, const QString & b) -> bool
-    {
-        return word_relevance(a) > word_relevance(b);
-    });
 
     setAlphabert(m_validLetters[0]);
     setAlphabert(m_validLetters[1]);
@@ -153,11 +89,13 @@ void WordlLogic::reset() {
 
     m_requiredLetters.clear();
 
+    m_ApplyCount = 0;
+
     emit show_wordlist(result);
 }
 
 void WordlLogic::exclude_letter(QChar letter) {
-    qDebug() << " exclude_letter" << letter;
+    //qDebug() << " exclude_letter" << letter;
 
     m_validLetters[0].removeAll(letter);
     m_validLetters[1].removeAll(letter);
@@ -167,13 +105,13 @@ void WordlLogic::exclude_letter(QChar letter) {
 }
 
 void WordlLogic::require_letter_at(int position, QChar letter) {
-    qDebug() << " require_letter_at" << position << letter;
+    //qDebug() << " require_letter_at" << position << letter;
     m_validLetters[position].clear();
     m_validLetters[position].append(letter);
 }
 
 void WordlLogic::require_letter_elswhere(int position, QChar letter) {
-    qDebug() << " require_letter_elswhere" << position << letter;
+    //qDebug() << " require_letter_elswhere" << position << letter;
     m_requiredLetters.removeAll(letter);
     m_requiredLetters.append(letter);
     m_validLetters[position].removeAll(letter);
@@ -183,14 +121,14 @@ void WordlLogic::require_letter_elswhere(int position, QChar letter) {
 
 void WordlLogic::apply() {
     QStringList result;
-
+#ifdef LOG_VALID_LETTERS
     qDebug() << m_validLetters[0];
     qDebug() << m_validLetters[1];
     qDebug() << m_validLetters[2];
     qDebug() << m_validLetters[3];
     qDebug() << m_validLetters[4];
     qDebug() << m_requiredLetters;
-
+#endif
     foreach(QString word, m_AllWords) {
         if (accept_word(word)) {
             result.append(word);
@@ -203,6 +141,7 @@ void WordlLogic::apply() {
         return word_relevance(a) > word_relevance(b);
     });
 
+    m_ApplyCount++;
 
     emit show_wordlist(result);
 }

@@ -3,5 +3,9 @@
         <file>5-letterwords.txt</file>
         <file>bigrams.txt</file>
         <file>all_words.txt</file>
+        <file>english_bigrams.txt</file>
+        <file>english_monograms.txt</file>
+        <file>english_trigrams.txt</file>
+        <file>wordle_list.txt</file>
     </qresource>
 </RCC>
