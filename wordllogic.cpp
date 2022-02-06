@@ -19,6 +19,7 @@ WordlLogic::WordlLogic(QObject* parent)
       m_3GramStatisitc(3, ":/english_trigrams.txt"),
       m_ApplyCount(0),
       m_AllWords(get_word_list_from_resource(":/wordle_list.txt"))
+//    m_AllWords(get_word_list_from_resource(":/5-letterwords.txt"))
 {
     //qDebug() << m_LetterStatisitc.min_relevance();
     //qDebug() << m_2GramStatisitc.min_relevance();

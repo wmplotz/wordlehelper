@@ -15,7 +15,7 @@ class WordleHelperMainWindow : public QMainWindow
 
     WordlLogic* m_Logic;
 
-    void process_commandline(QString commands);
+    void process_commandline();
 
 public:
     WordleHelperMainWindow(QWidget *parent = nullptr);
